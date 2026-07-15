@@ -1,0 +1,106 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="1050" viewBox="0 0 1200 1050" font-family="Helvetica, Arial, sans-serif">
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#4B5563"/>
+    </marker>
+    <style>
+      .trigger { fill: #EEF2FF; stroke: #4F46E5; stroke-width:2; }
+      .action { fill: #ECFDF5; stroke: #059669; stroke-width:2; }
+      .wait { fill: #FFF7ED; stroke: #EA580C; stroke-width:2; }
+      .decision { fill: #FEF2F2; stroke: #DC2626; stroke-width:2; }
+      .end { fill: #F3F4F6; stroke: #6B7280; stroke-width:2; }
+      .subflow { fill: #F5F3FF; stroke: #7C3AED; stroke-width:2; stroke-dasharray: 5,3; }
+      .label { font-size: 13px; fill: #111827; font-weight: 600; }
+      .sublabel { font-size: 10.5px; fill: #4B5563; }
+      .sectiontitle { font-size: 15px; fill: #4B5563; font-weight: 700; }
+      .arrow { stroke: #4B5563; stroke-width: 2; fill: none; marker-end: url(#arrow); }
+    </style>
+  </defs>
+
+  <rect width="1200" height="1050" fill="#FFFFFF"/>
+  <text x="600" y="35" text-anchor="middle" font-size="22" font-weight="700" fill="#111827">Appointment Booking + Reminder System — Architecture</text>
+
+  <!-- Main flow -->
+  <rect class="trigger" x="450" y="65" width="300" height="50" rx="10"/>
+  <text class="label" x="600" y="95" text-anchor="middle">Appointment Booked</text>
+
+  <path class="arrow" d="M600,115 L600,145"/>
+
+  <rect class="action" x="450" y="145" width="300" height="45" rx="10"/>
+  <text class="label" x="600" y="172" text-anchor="middle">Send Booking Confirmation</text>
+
+  <path class="arrow" d="M600,190 L600,220"/>
+
+  <rect class="wait" x="450" y="220" width="300" height="45" rx="10"/>
+  <text class="label" x="600" y="247" text-anchor="middle">Wait Until 24hr Before</text>
+
+  <path class="arrow" d="M600,265 L600,295"/>
+
+  <rect class="action" x="450" y="295" width="300" height="55" rx="10"/>
+  <text class="label" x="600" y="320" text-anchor="middle">Send 24-Hour Reminder</text>
+  <text class="sublabel" x="600" y="337" text-anchor="middle">"Reply CONFIRM or RESCHEDULE"</text>
+
+  <path class="arrow" d="M600,350 L600,380"/>
+
+  <rect class="wait" x="450" y="380" width="300" height="45" rx="10"/>
+  <text class="label" x="600" y="407" text-anchor="middle">Wait Until 1hr Before</text>
+
+  <path class="arrow" d="M600,425 L600,455"/>
+
+  <rect class="action" x="450" y="455" width="300" height="45" rx="10"/>
+  <text class="label" x="600" y="482" text-anchor="middle">Send 1-Hour Reminder</text>
+
+  <path class="arrow" d="M600,500 L600,530"/>
+
+  <polygon points="600,530 720,570 600,610 480,570" class="decision"/>
+  <text class="label" x="600" y="565" text-anchor="middle">Appointment</text>
+  <text class="label" x="600" y="581" text-anchor="middle">Outcome</text>
+
+  <!-- 3 branches -->
+  <line class="arrow" x1="480" y1="570" x2="180" y2="570" stroke="#4B5563" stroke-width="2" marker-end="url(#arrow)"/>
+  <line class="arrow" x1="600" y1="610" x2="600" y2="650" stroke="#4B5563" stroke-width="2" marker-end="url(#arrow)"/>
+  <line class="arrow" x1="720" y1="570" x2="1020" y2="570" stroke="#4B5563" stroke-width="2" marker-end="url(#arrow)"/>
+
+  <text class="sublabel" x="330" y="560" text-anchor="middle">Attended</text>
+  <rect class="end" x="80" y="595" width="200" height="50" rx="10"/>
+  <text class="label" x="180" y="618" text-anchor="middle" font-size="12">Completed ✅</text>
+  <text class="sublabel" x="180" y="634" text-anchor="middle">Appointment fulfilled</text>
+
+  <text class="sublabel" x="600" y="635" text-anchor="middle">Cancelled</text>
+  <rect class="subflow" x="450" y="650" width="300" height="70" rx="10"/>
+  <text class="label" x="600" y="675" text-anchor="middle" font-size="12">Cancellation Recovery</text>
+  <text class="sublabel" x="600" y="692" text-anchor="middle">(separate workflow)</text>
+  <text class="sublabel" x="600" y="707" text-anchor="middle">SMS with new booking link</text>
+
+  <text class="sublabel" x="870" y="560" text-anchor="middle">No-Show</text>
+  <rect class="subflow" x="920" y="595" width="220" height="90" rx="10"/>
+  <text class="label" x="1030" y="618" text-anchor="middle" font-size="12">No-Show Follow-up</text>
+  <text class="sublabel" x="1030" y="635" text-anchor="middle">(separate workflow)</text>
+  <text class="sublabel" x="1030" y="650" text-anchor="middle">SMS reschedule offer</text>
+  <text class="sublabel" x="1030" y="665" text-anchor="middle">Wait 24h → 2nd follow-up</text>
+
+  <!-- Confirmation reply handler box -->
+  <rect class="subflow" x="450" y="760" width="300" height="110" rx="10"/>
+  <text class="sectiontitle" x="600" y="783" text-anchor="middle">Confirmation Reply Handler</text>
+  <text class="sublabel" x="600" y="803" text-anchor="middle">(separate workflow, runs in parallel)</text>
+  <text class="sublabel" x="600" y="820" text-anchor="middle">Trigger: Customer Replied</text>
+  <text class="sublabel" x="600" y="836" text-anchor="middle">"CONFIRM" → status = Confirmed</text>
+  <text class="sublabel" x="600" y="852" text-anchor="middle">"RESCHEDULE" → resend link + notify rep</text>
+
+  <line class="arrow" x1="600" y1="350" x2="330" y2="760" stroke="#7C3AED" stroke-width="1.5" stroke-dasharray="4,3" marker-end="url(#arrow)"/>
+  <text class="sublabel" x="380" y="550" text-anchor="middle" fill="#7C3AED">listens throughout</text>
+
+  <!-- Legend -->
+  <rect x="80" y="960" width="16" height="16" class="trigger"/>
+  <text x="102" y="973" class="sublabel">Trigger</text>
+  <rect x="180" y="960" width="16" height="16" class="action"/>
+  <text x="202" y="973" class="sublabel">Action</text>
+  <rect x="270" y="960" width="16" height="16" class="wait"/>
+  <text x="292" y="973" class="sublabel">Wait/Delay</text>
+  <rect x="380" y="960" width="16" height="16" class="decision"/>
+  <text x="402" y="973" class="sublabel">Decision</text>
+  <rect x="470" y="960" width="16" height="16" class="end"/>
+  <text x="492" y="973" class="sublabel">Outcome</text>
+  <rect x="560" y="960" width="16" height="16" class="subflow"/>
+  <text x="582" y="973" class="sublabel">Separate sub-workflow</text>
+</svg>

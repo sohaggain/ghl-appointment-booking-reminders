@@ -1,0 +1,161 @@
+{
+  "name": "Appointment Booking + Reminder System (GHL + n8n)",
+  "meta": {
+    "description": "Full appointment lifecycle automation: booking confirmation -> 24hr reminder -> 1hr reminder -> confirm/reschedule reply handling -> no-show follow-up -> cancellation recovery. Portfolio demo — all credentials, phone numbers, and account IDs below are placeholders.",
+    "instanceId": "PORTFOLIO-DEMO-APPOINTMENT-REMINDERS"
+  },
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "ghl-appointment-booked-webhook",
+        "responseMode": "onReceived",
+        "options": {}
+      },
+      "id": "node-1-webhook-trigger",
+      "name": "1. Appointment Booked (Webhook)",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [200, 320],
+      "notes": "Triggered from GHL Workflow: Appointment Status = Booked/Confirmed."
+    },
+    {
+      "parameters": {
+        "functionCode": "// Normalize incoming appointment payload from GHL\nconst appt = items[0].json;\nreturn [{\n  json: {\n    contact_id: appt.contact_id || 'DEMO-CONTACT-ID',\n    appointment_id: appt.appointment_id || 'DEMO-APPT-ID',\n    start_time: appt.start_time || new Date().toISOString(),\n    service: appt.service || 'Consultation'\n  }\n}];"
+      },
+      "id": "node-2-normalize-data",
+      "name": "2. Normalize Appointment Data",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [420, 320]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://services.leadconnectorhq.com/conversations/messages",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            { "name": "type", "value": "SMS" },
+            { "name": "contactId", "value": "={{$json.contact_id}}" },
+            { "name": "message", "value": "You're booked! {{$json.service}} confirmed for {{$json.start_time}}. We'll send reminders as it gets closer." }
+          ]
+        },
+        "options": {}
+      },
+      "id": "node-3-confirmation-sms",
+      "name": "3. Send Booking Confirmation SMS",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 3,
+      "position": [640, 320]
+    },
+    {
+      "parameters": {
+        "amount": 23,
+        "unit": "hours"
+      },
+      "id": "node-4-wait-24hr",
+      "name": "4. Wait Until 24hr Before Appointment",
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1,
+      "position": [860, 320],
+      "notes": "In GHL native workflow, use 'Wait Until Appointment Time - 24 hours' built-in option. In n8n, calculate delay dynamically from start_time."
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://services.leadconnectorhq.com/conversations/messages",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            { "name": "type", "value": "SMS" },
+            { "name": "contactId", "value": "={{$json.contact_id}}" },
+            { "name": "message", "value": "Hi {{$json.first_name}}, reminder: your appointment is tomorrow at {{$json.start_time}}. Reply CONFIRM to confirm or RESCHEDULE if you need to change it." }
+          ]
+        },
+        "options": {}
+      },
+      "id": "node-5-reminder-24hr",
+      "name": "5. Send 24-Hour Reminder (SMS + Email)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 3,
+      "position": [1080, 320]
+    },
+    {
+      "parameters": {
+        "amount": 23,
+        "unit": "hours"
+      },
+      "id": "node-6-wait-1hr",
+      "name": "6. Wait Until 1hr Before Appointment",
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1,
+      "position": [1300, 320]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://services.leadconnectorhq.com/conversations/messages",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            { "name": "type", "value": "SMS" },
+            { "name": "contactId", "value": "={{$json.contact_id}}" },
+            { "name": "message", "value": "Reminder: your appointment is in 1 hour. See you soon!" }
+          ]
+        },
+        "options": {}
+      },
+      "id": "node-7-reminder-1hr",
+      "name": "7. Send 1-Hour Reminder SMS",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 3,
+      "position": [1520, 320]
+    }
+  ],
+  "connections": {
+    "1. Appointment Booked (Webhook)": {
+      "main": [[{ "node": "2. Normalize Appointment Data", "type": "main", "index": 0 }]]
+    },
+    "2. Normalize Appointment Data": {
+      "main": [[{ "node": "3. Send Booking Confirmation SMS", "type": "main", "index": 0 }]]
+    },
+    "3. Send Booking Confirmation SMS": {
+      "main": [[{ "node": "4. Wait Until 24hr Before Appointment", "type": "main", "index": 0 }]]
+    },
+    "4. Wait Until 24hr Before Appointment": {
+      "main": [[{ "node": "5. Send 24-Hour Reminder (SMS + Email)", "type": "main", "index": 0 }]]
+    },
+    "5. Send 24-Hour Reminder (SMS + Email)": {
+      "main": [[{ "node": "6. Wait Until 1hr Before Appointment", "type": "main", "index": 0 }]]
+    },
+    "6. Wait Until 1hr Before Appointment": {
+      "main": [[{ "node": "7. Send 1-Hour Reminder SMS", "type": "main", "index": 0 }]]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "tags": ["portfolio-demo", "ghl", "appointment-reminders", "no-show-reduction"],
+  "sub_workflows": [
+    {
+      "name": "Confirmation Reply Handler",
+      "description": "Separate GHL workflow. Trigger: Customer Replied (keyword filter). If reply contains 'CONFIRM' -> update appointment status to Confirmed, tag 'appointment-confirmed'. If reply contains 'RESCHEDULE' -> resend booking link, tag 'needs-reschedule', notify rep."
+    },
+    {
+      "name": "No-Show Follow-up",
+      "description": "Separate GHL workflow. Trigger: Appointment Status = No Show. Send SMS offering reschedule link, tag 'no-show-followup'. Wait 24hr, if not rebooked send 2nd follow-up."
+    },
+    {
+      "name": "Cancellation Recovery",
+      "description": "Separate GHL workflow. Trigger: Appointment Status = Cancelled. Send SMS with new booking link to recover the lost slot."
+    }
+  ]
+}
